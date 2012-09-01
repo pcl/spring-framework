@@ -19,6 +19,8 @@ package org.springframework.web.servlet.mvc.method.annotation;
 import java.io.IOException;
 import java.lang.reflect.Method;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -44,6 +46,8 @@ import org.springframework.web.servlet.View;
  * @see #invokeAndHandle(NativeWebRequest, ModelAndViewContainer, Object...)
  */
 public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
+
+	private static final Log log = LogFactory.getLog(ServletInvocableHandlerMethod.class);
 
 	private HttpStatus responseStatus;
 
@@ -109,8 +113,8 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 		try {
 			returnValueHandlers.handleReturnValue(returnValue, getReturnType(), mavContainer, request);
 		} catch (Exception ex) {
-			if (logger.isTraceEnabled()) {
-				logger.trace(getReturnValueHandlingErrorMessage("Error handling return value", returnValue), ex);
+			if (log.isTraceEnabled()) {
+				log.trace(getReturnValueHandlingErrorMessage("Error handling return value", returnValue), ex);
 			}
 			throw ex;
 		}

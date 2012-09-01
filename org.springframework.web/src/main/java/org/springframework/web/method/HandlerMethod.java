@@ -43,8 +43,17 @@ import org.springframework.util.ClassUtils;
  */
 public class HandlerMethod {
 
-	/** Logger that is available to subclasses */
-	protected final Log logger = LogFactory.getLog(getClass());
+	private static final Log LOGGER = LogFactory.getLog(HandlerMethod.class);
+
+	/**
+	 * Logger that is available to subclasses. This simply points to the static
+	 * {@link #LOGGER} field. This field is in place for backward-compatibility
+	 * with any unknown classes that might extend this class. Note that
+	 * this logger will log in the {@link HandlerMethod} namespace, not that
+	 * of the subclass.
+	 */
+	@Deprecated
+	protected final Log logger = LOGGER;
 
 	private final Object bean;
 

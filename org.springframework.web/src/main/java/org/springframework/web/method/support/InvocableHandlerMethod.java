@@ -20,6 +20,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.core.MethodParameter;
@@ -46,6 +48,8 @@ import org.springframework.web.method.HandlerMethod;
  * @since 3.1
  */
 public class InvocableHandlerMethod extends HandlerMethod {
+
+	private static final Log log = LogFactory.getLog(InvocableHandlerMethod.class);
 
 	private HandlerMethodArgumentResolverComposite argumentResolvers = new HandlerMethodArgumentResolverComposite();
 
@@ -116,17 +120,17 @@ public class InvocableHandlerMethod extends HandlerMethod {
 										 Object... providedArgs) throws Exception {
 		Object[] args = getMethodArgumentValues(request, mavContainer, providedArgs);
 
-		if (logger.isTraceEnabled()) {
+		if (log.isTraceEnabled()) {
 			StringBuilder builder = new StringBuilder("Invoking [");
 			builder.append(this.getMethod().getName()).append("] method with arguments ");
 			builder.append(Arrays.asList(args));
-			logger.trace(builder.toString());
+			log.trace(builder.toString());
 		}
 
 		Object returnValue = invoke(args);
 
-		if (logger.isTraceEnabled()) {
-			logger.trace("Method [" + this.getMethod().getName() + "] returned [" + returnValue + "]");
+		if (log.isTraceEnabled()) {
+			log.trace("Method [" + this.getMethod().getName() + "] returned [" + returnValue + "]");
 		}
 
 		return returnValue;
@@ -156,8 +160,8 @@ public class InvocableHandlerMethod extends HandlerMethod {
 					args[i] = argumentResolvers.resolveArgument(parameter, mavContainer, request, dataBinderFactory);
 					continue;
 				} catch (Exception ex) {
-					if (logger.isTraceEnabled()) {
-						logger.trace(getArgumentResolutionErrorMessage("Error resolving argument", i), ex);
+					if (log.isTraceEnabled()) {
+						log.trace(getArgumentResolutionErrorMessage("Error resolving argument", i), ex);
 					}
 					throw ex;
 				}
