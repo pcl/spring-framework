@@ -21,6 +21,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -49,6 +51,8 @@ import org.springframework.web.util.NestedServletException;
  * @since 3.1
  */
 public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
+
+	private static final Log log = LogFactory.getLog(ServletInvocableHandlerMethod.class);
 
 	private HttpStatus responseStatus;
 
@@ -111,8 +115,8 @@ public class ServletInvocableHandlerMethod extends InvocableHandlerMethod {
 			this.returnValueHandlers.handleReturnValue(returnValue, getReturnValueType(returnValue), mavContainer, webRequest);
 		}
 		catch (Exception ex) {
-			if (logger.isTraceEnabled()) {
-				logger.trace(getReturnValueHandlingErrorMessage("Error handling return value", returnValue), ex);
+			if (log.isTraceEnabled()) {
+				log.trace(getReturnValueHandlingErrorMessage("Error handling return value", returnValue), ex);
 			}
 			throw ex;
 		}
