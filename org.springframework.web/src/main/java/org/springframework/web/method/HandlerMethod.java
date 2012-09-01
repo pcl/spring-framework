@@ -18,6 +18,8 @@ package org.springframework.web.method;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -64,6 +66,8 @@ public class HandlerMethod {
 	private MethodParameter[] parameters;
 
 	private final Method bridgedMethod;
+
+	private Map<Class, Annotation> annotationCache = new HashMap<Class, Annotation>();
 
 	/**
 	 * Constructs a new handler method with the given bean instance and method.
@@ -186,7 +190,12 @@ public class HandlerMethod {
 	 * @return the annotation, or {@code null} if none found
 	 */
 	public <A extends Annotation> A getMethodAnnotation(Class<A> annotationType) {
-		return AnnotationUtils.findAnnotation(this.method, annotationType);
+		Annotation annotation = annotationCache.get(annotationType);
+		if (annotation == null) {
+			annotation = AnnotationUtils.findAnnotation(this.method, annotationType);
+			annotationCache.put(annotationType, annotation);
+		}
+		return (A) annotation;
 	}
 
 	/**
@@ -199,7 +208,9 @@ public class HandlerMethod {
 			String beanName = (String) this.bean;
 			handler = this.beanFactory.getBean(beanName);
 		}
-		return new HandlerMethod(handler, method);
+		HandlerMethod handlerMethod = new HandlerMethod(handler, method);
+		handlerMethod.copyInternalCaches(this);
+		return handlerMethod;
 	}
 	
 	@Override
@@ -223,6 +234,27 @@ public class HandlerMethod {
 	public String toString() {
 		return method.toGenericString();
 	}
+
+	/**
+	 * Copy the internal caches from <code>handlerMethod</code> into this
+	 * data structure. This allows new <code>HandlerMethod</code> instances
+	 * to be created on a per-request basis without incurring the penalty
+	 * of re-parsing.
+	 *
+	 * @param handlerMethod
+	 */
+	public void copyInternalCaches(HandlerMethod handlerMethod) {
+		// no-op if the method objects are different -- internal caches are all method-centric.
+		if (this.method != handlerMethod.method)
+			return;
+
+		// invoke the getter instead of using the field directly to ensure that we've computed the cache.
+		this.parameters = handlerMethod.getMethodParameters();
+
+		// copy-by-reference so that ongoing lookups will be shared
+		this.annotationCache = handlerMethod.annotationCache;
+	}
+
 
 	/**
 	 * A {@link MethodParameter} that resolves method annotations even when the actual annotations
@@ -253,5 +285,4 @@ public class HandlerMethod {
 			return HandlerMethod.this.getMethodAnnotation(annotationType);
 		}
 	}
-
 }

@@ -135,6 +135,9 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter i
 
 	private final Map<Class<?>, Set<Method>> modelFactoryCache = new ConcurrentHashMap<Class<?>, Set<Method>>();
 
+	private final ConcurrentHashMap<HandlerMethodAndDataBinderFactory, ServletInvocableHandlerMethod> requestMappingMethodCache =
+		new ConcurrentHashMap<HandlerMethodAndDataBinderFactory, ServletInvocableHandlerMethod>();
+
 	/**
 	 * Default constructor.
 	 */
@@ -607,7 +610,7 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter i
 
 		WebDataBinderFactory binderFactory = getDataBinderFactory(handlerMethod);
 		ModelFactory modelFactory = getModelFactory(handlerMethod, binderFactory);
-		ServletInvocableHandlerMethod requestMappingMethod = createRequestMappingMethod(handlerMethod, binderFactory);
+		ServletInvocableHandlerMethod requestMappingMethod = getRequestMappingMethod(handlerMethod, binderFactory);
 
 		ModelAndViewContainer mavContainer = new ModelAndViewContainer();
 		mavContainer.addAllAttributes(RequestContextUtils.getInputFlashMap(request));
@@ -634,14 +637,21 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter i
 		}
 	}
 
-	private ServletInvocableHandlerMethod createRequestMappingMethod(HandlerMethod handlerMethod, 
-																	 WebDataBinderFactory binderFactory) {
-		ServletInvocableHandlerMethod requestMethod;
-		requestMethod = new ServletInvocableHandlerMethod(handlerMethod.getBean(), handlerMethod.getMethod());
-		requestMethod.setHandlerMethodArgumentResolvers(this.argumentResolvers);
-		requestMethod.setHandlerMethodReturnValueHandlers(this.returnValueHandlers);
-		requestMethod.setDataBinderFactory(binderFactory);
-		requestMethod.setParameterNameDiscoverer(this.parameterNameDiscoverer);
+	private ServletInvocableHandlerMethod getRequestMappingMethod(HandlerMethod handlerMethod,
+																  WebDataBinderFactory binderFactory) {
+		HandlerMethodAndDataBinderFactory key = new HandlerMethodAndDataBinderFactory(handlerMethod, binderFactory);
+		ServletInvocableHandlerMethod requestMethod = requestMappingMethodCache.get(key);
+		if (requestMethod == null) {
+			requestMethod = new ServletInvocableHandlerMethod(handlerMethod.getBean(), handlerMethod.getMethod());
+			requestMethod.setHandlerMethodArgumentResolvers(this.argumentResolvers);
+			requestMethod.setHandlerMethodReturnValueHandlers(this.returnValueHandlers);
+			requestMethod.setDataBinderFactory(binderFactory);
+			requestMethod.setParameterNameDiscoverer(this.parameterNameDiscoverer);
+			requestMethod.copyInternalCaches(handlerMethod);
+			ServletInvocableHandlerMethod cachedValue = requestMappingMethodCache.putIfAbsent(key, requestMethod);
+			if (cachedValue != null)
+				requestMethod = cachedValue;
+		}
 		return requestMethod;
 	}
 	
@@ -716,4 +726,42 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter i
 		}
 	};
 
+	private static class HandlerMethodAndDataBinderFactory {
+
+		private final HandlerMethod method;
+		private final WebDataBinderFactory factory;
+
+		public HandlerMethodAndDataBinderFactory(HandlerMethod method, WebDataBinderFactory factory) {
+			this.method = method;
+			this.factory = factory;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) {
+				return true;
+			}
+			if (o == null || getClass() != o.getClass()) {
+				return false;
+			}
+
+			HandlerMethodAndDataBinderFactory factory1 = (HandlerMethodAndDataBinderFactory) o;
+
+			if (factory != null ? !factory.equals(factory1.factory) : factory1.factory != null) {
+				return false;
+			}
+			if (method != null ? !method.equals(factory1.method) : factory1.method != null) {
+				return false;
+			}
+
+			return true;
+		}
+
+		@Override
+		public int hashCode() {
+			int result = method != null ? method.hashCode() : 0;
+			result = 31 * result + (factory != null ? factory.hashCode() : 0);
+			return result;
+		}
+	}
 }
