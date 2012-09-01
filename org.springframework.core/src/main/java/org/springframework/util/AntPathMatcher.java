@@ -17,6 +17,7 @@
 package org.springframework.util;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -52,6 +53,8 @@ public class AntPathMatcher implements PathMatcher {
 	public static final String DEFAULT_PATH_SEPARATOR = "/";
 
 	private String pathSeparator = DEFAULT_PATH_SEPARATOR;
+
+	private Map<String, AntPathStringMatcher> stringMatchers = new HashMap<String, AntPathStringMatcher>();
 
 
 	/** Set the path separator to use for pattern parsing. Default is "/", as in Ant. */
@@ -211,13 +214,19 @@ public class AntPathMatcher implements PathMatcher {
 	/**
 	 * Tests whether or not a string matches against a pattern. The pattern may contain two special characters:<br> '*'
 	 * means zero or more characters<br> '?' means one and only one character
-	 * @param pattern pattern to match against. Must not be <code>null</code>.
+	 * @param patternString pattern to match against. Must not be <code>null</code>.
 	 * @param str string which must be matched against the pattern. Must not be <code>null</code>.
 	 * @return <code>true</code> if the string matches against the pattern, or <code>false</code> otherwise.
 	 */
-	private boolean matchStrings(String pattern, String str, Map<String, String> uriTemplateVariables) {
-		AntPathStringMatcher matcher = new AntPathStringMatcher(pattern, str, uriTemplateVariables);
-		return matcher.matchStrings();
+	private boolean matchStrings(String patternString, String str, Map<String, String> uriTemplateVariables) {
+		AntPathStringMatcher stringMatcher = stringMatchers.get(patternString);
+		if (stringMatcher == null) {
+			// this is not an if-guarded synchronization -- it's just an optimization to avoid creating duplicate
+			// matchers while still remaining lock-free. Matchers are expensive to create, but interchangeable.
+			stringMatcher = new AntPathStringMatcher(patternString);
+			stringMatchers.put(patternString, stringMatcher);
+		}
+		return stringMatcher.matchStrings(str, uriTemplateVariables);
 	}
 
 	/**
