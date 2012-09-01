@@ -61,7 +61,7 @@ public class HandlerMethod {
 
 	private final BeanFactory beanFactory;
 
-	private MethodParameter[] parameters;
+	private MethodParameterProvider parameterProvider;
 
 	private final Method bridgedMethod;
 
@@ -151,15 +151,10 @@ public class HandlerMethod {
 	 * Returns the method parameters for this handler method.
 	 */
 	public MethodParameter[] getMethodParameters() {
-		if (this.parameters == null) {
-			int parameterCount = this.bridgedMethod.getParameterTypes().length;
-			MethodParameter[] p = new MethodParameter[parameterCount];
-			for (int i = 0; i < parameterCount; i++) {
-				p[i] = new HandlerMethodParameter(i);
-			}
-			this.parameters = p;
+		if (this.parameterProvider == null) {
+			this.parameterProvider = new MethodParameterProvider();
 		}
-		return this.parameters;
+		return this.parameterProvider.parameters;
 	}
 
 	/**
@@ -229,6 +224,20 @@ public class HandlerMethod {
 	}
 
 	/**
+	 * Copy the internal caches from <code>handlerMethod</code> into this
+	 * data structure. This allows new <code>HandlerMethod</code> instances
+	 * to be created on a per-request basis without incurring the penalty
+	 * of re-parsing.
+	 *
+	 * @param handlerMethod
+	 */
+	public void copyInternalCaches(HandlerMethod handlerMethod) {
+		if (this.parameterProvider == null)
+			this.parameterProvider = handlerMethod.parameterProvider;
+	}
+
+
+	/**
 	 * A MethodParameter with HandlerMethod-specific behavior.
 	 */
 	private class HandlerMethodParameter extends MethodParameter {
@@ -266,4 +275,15 @@ public class HandlerMethod {
 		}
 	}
 
+	private class MethodParameterProvider {
+		private MethodParameter[] parameters;
+
+		public MethodParameterProvider() {
+			int parameterCount = HandlerMethod.this.bridgedMethod.getParameterTypes().length;
+			this.parameters = new MethodParameter[parameterCount];
+			for (int i = 0; i < parameterCount; i++) {
+				parameters[i] = new HandlerMethodParameter(i);
+			}
+		}
+	}
 }
