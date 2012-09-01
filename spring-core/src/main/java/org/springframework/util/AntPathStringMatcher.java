@@ -41,16 +41,10 @@ class AntPathStringMatcher {
 
 	private final Pattern pattern;
 
-	private String str;
-
 	private final List<String> variableNames = new LinkedList<String>();
 
-	private final Map<String, String> uriTemplateVariables;
-
 	/** Construct a new instance of the <code>AntPatchStringMatcher</code>. */
-	AntPathStringMatcher(String pattern, String str, Map<String, String> uriTemplateVariables) {
-		this.str = str;
-		this.uriTemplateVariables = uriTemplateVariables;
+	AntPathStringMatcher(String pattern) {
 		this.pattern = createPattern(pattern);
 	}
 
@@ -100,7 +94,7 @@ class AntPathStringMatcher {
 	 *
 	 * @return <code>true</code> if the string matches against the pattern, or <code>false</code> otherwise.
 	 */
-	public boolean matchStrings() {
+	public boolean matchStrings(String str, Map<String, String> uriTemplateVariables) {
 		Matcher matcher = pattern.matcher(str);
 		if (matcher.matches()) {
 			if (uriTemplateVariables != null) {
