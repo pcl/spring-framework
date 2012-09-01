@@ -642,6 +642,7 @@ public class RequestMappingHandlerAdapter extends AbstractHandlerMethodAdapter i
 		requestMethod.setHandlerMethodReturnValueHandlers(this.returnValueHandlers);
 		requestMethod.setDataBinderFactory(binderFactory);
 		requestMethod.setParameterNameDiscoverer(this.parameterNameDiscoverer);
+		requestMethod.copyInternalCaches(handlerMethod);
 		return requestMethod;
 	}
 	

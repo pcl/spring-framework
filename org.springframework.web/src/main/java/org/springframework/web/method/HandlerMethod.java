@@ -225,6 +225,20 @@ public class HandlerMethod {
 	}
 
 	/**
+	 * Copy the internal caches from <code>handlerMethod</code> into this
+	 * data structure. This allows new <code>HandlerMethod</code> instances
+	 * to be created on a per-request basis without incurring the penalty
+	 * of re-parsing.
+	 *
+	 * @param handlerMethod
+	 */
+	public void copyInternalCaches(HandlerMethod handlerMethod) {
+		// invoke the getter instead of using the field directly to ensure that we've computed the cache.
+		this.parameters = handlerMethod.getMethodParameters();
+	}
+
+
+	/**
 	 * A {@link MethodParameter} that resolves method annotations even when the actual annotations
 	 * are on a bridge method rather than on the current method. Annotations on super types are
 	 * also returned via {@link AnnotationUtils#findAnnotation(Method, Class)}. 
@@ -253,5 +267,4 @@ public class HandlerMethod {
 			return HandlerMethod.this.getMethodAnnotation(annotationType);
 		}
 	}
-
 }
