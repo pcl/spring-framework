@@ -190,12 +190,9 @@ public class HandlerMethod {
 	 * @return the annotation, or {@code null} if none found
 	 */
 	public <A extends Annotation> A getMethodAnnotation(Class<A> annotationType) {
-		Annotation annotation = annotationCache.get(annotationType);
-		if (annotation == null) {
-			annotation = AnnotationUtils.findAnnotation(this.method, annotationType);
-			annotationCache.put(annotationType, annotation);
-		}
-		return (A) annotation;
+		if (!annotationCache.containsKey(annotationType))
+			annotationCache.put(annotationType, AnnotationUtils.findAnnotation(this.method, annotationType));
+		return (A) annotationCache.get(annotationType);
 	}
 
 	/**
@@ -250,9 +247,6 @@ public class HandlerMethod {
 
 		// invoke the getter instead of using the field directly to ensure that we've computed the cache.
 		this.parameters = handlerMethod.getMethodParameters();
-
-		// copy-by-reference so that ongoing lookups will be shared
-		this.annotationCache = handlerMethod.annotationCache;
 	}
 
 
